@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="60dp"
+    android:id="@+id/list_item_forecast_textview"
+    android:background="#0f9999"
+    android:gravity="center"
+    android:text="Today--Sunshine--88/63"
+    android:layout_margin="15dp"
+
+    android:textSize="24sp"
+    >
+
+</TextView>
