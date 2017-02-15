@@ -1,8 +1,11 @@
 package com.timen4.ronnny.sunshine;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -12,6 +15,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -41,6 +45,7 @@ public class ForecastFragment extends Fragment {
     private BufferedReader reader=null;
     private String forecastJsonStr;
 
+
     public ForecastFragment() {
     }
 
@@ -53,42 +58,84 @@ public class ForecastFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        updateDate();
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.forecastfragment,menu);
+        inflater.inflate(R.menu.main,menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         if(itemId==R.id.action_refresh){
-            FetchWeatherTask weatherTask=new FetchWeatherTask();
-            weatherTask.execute("shanghai");
+            updateDate();
+            return true;
+        }else if (itemId==R.id.action_setting){
+            Intent intent=new Intent(getActivity(),SettingActivity.class);
+            startActivity(intent);
+            return true;
+        }else if(itemId==R.id.action_map){
+            openPreferredLocationInMap();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    private void openPreferredLocationInMap() {
+        SharedPreferences sharedPrefs =
+                PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location = sharedPrefs.getString(
+                getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default));
+
+        // Using the URI scheme for showing a location found on a map.  This super-handy
+        // intent can is detailed in the "Common Intents" page of Android's developer site:
+        // http://developer.android.com/guide/components/intents-common.html#Maps
+        Uri geoLocation = Uri.parse("geo:0,0?").buildUpon()
+                .appendQueryParameter("q", location)
+                .build();
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geoLocation);
+
+        if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivity(intent);
+        } else {
+            Log.d("location", "Couldn't call " + location + ", no receiving apps installed!");
+        }
+    }
+
+    private void updateDate() {
+        FetchWeatherTask weatherTask=new FetchWeatherTask();
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location= sharedPrefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
+        weatherTask.execute(location);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView=inflater.inflate(R.layout.fragment_main,null);
         listView_forecast = (ListView) rootView.findViewById(R.id.listview_forecast);
-        initData();
-        mForecastAdapter = new ArrayAdapter<String>(getActivity(), R.layout.list_item_forecast, R.id.list_item_forecast_textview, mWeekForecast);
+
+        mForecastAdapter = new ArrayAdapter<String>(getActivity(), R.layout.list_item_forecast, R.id.list_item_forecast_textview, new ArrayList<String>());
         listView_forecast.setAdapter(mForecastAdapter);
+        listView_forecast.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String forecast=mForecastAdapter.getItem(position);
+                Intent intent=new Intent(getContext(),DetialActivity.class);
+                intent.putExtra("forecast",forecast);
+                startActivity(intent);
+            }
+        });
         return rootView;
     }
 
-
-    private void initData() {
-        mWeekForecast=new ArrayList<String>();
-        mWeekForecast.add("Today--Sunny--88/63");
-        mWeekForecast.add("Tomorrow--Sunny--88/63");
-        mWeekForecast.add("Weds--Cloudy--88/63");
-        mWeekForecast.add("Thur--Rainny--88/63");
-        mWeekForecast.add("Fri--Forggy--88/63");
-        mWeekForecast.add("Sat--Sunny--88/63");
-    }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
@@ -105,6 +152,17 @@ public class ForecastFragment extends Fragment {
         final String UNIT_PARAM="unit";
         final String START_PARAM="start";
         final String DAYS_PARAM="days";
+
+
+        // Data is fetched in Celsius by default.
+        // If user prefers to see in Fahrenheit, convert the values here.
+        // We do this rather than fetching in Fahrenheit so that the user can
+        // change this option without us having to re-fetch the data once
+        // we start storing the values in a database.
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String unitType = sharedPrefs.getString(
+                getString(R.string.pref_units_key),
+                getString(R.string.pref_units_metric));
 
 
 
@@ -171,6 +229,7 @@ public class ForecastFragment extends Fragment {
         @Override
         protected void onPostExecute(String[] results) {
             if (results!=null){
+                mForecastAdapter.clear();
                 for (String result:results) {
                     mForecastAdapter.add(result);
                 }
@@ -186,13 +245,12 @@ public class ForecastFragment extends Fragment {
             String [] resultStrs=new String[3];
             for (int i=0;i<weatherobj.length();i++){
                 WeatherData weatherData = new WeatherData();
-//                JSONObject weathTemp = (JSONObject) weatherArray.get(i);
                 weatherData.setDate(weatherobj.optJSONObject(i).getString("date"));
-                weatherData.setHigh(weatherobj.optJSONObject(i).getString("high"));
-                weatherData.setLow(weatherobj.optJSONObject(i).getString("low"));
+                weatherData.setHigh(Double.parseDouble(weatherobj.optJSONObject(i).getString("high")));
+                weatherData.setLow(Double.parseDouble(weatherobj.optJSONObject(i).getString("low")));
                 weatherData.setText_day(weatherobj.optJSONObject(i).getString("text_day"));
                 weatherDatas.add(weatherData);
-                resultStrs[i]=weatherData.toString();
+                resultStrs[i]=weatherData.toString(getActivity(),unitType);
             }
             return resultStrs;
         }

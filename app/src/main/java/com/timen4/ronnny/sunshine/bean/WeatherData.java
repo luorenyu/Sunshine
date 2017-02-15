@@ -1,5 +1,10 @@
 package com.timen4.ronnny.sunshine.bean;
 
+import android.content.Context;
+import android.util.Log;
+
+import com.timen4.ronnny.sunshine.R;
+
 /**
  * Created by luore on 2016/6/26.
  */
@@ -23,8 +28,8 @@ public class WeatherData {
     private String code_day;
     private String code_night;
     private String date;
-    private String high;
-    private String low;
+    private Double high;
+    private Double low;
     private String precip;
     private String text_day;
     private String text_night;
@@ -57,19 +62,19 @@ public class WeatherData {
         this.date = date;
     }
 
-    public String getHigh() {
+    public Double getHigh() {
         return high;
     }
 
-    public void setHigh(String high) {
+    public void setHigh(Double high) {
         this.high = high;
     }
 
-    public String getLow() {
+    public Double getLow() {
         return low;
     }
 
-    public void setLow(String low) {
+    public void setLow(Double low) {
         this.low = low;
     }
 
@@ -129,8 +134,16 @@ public class WeatherData {
         this.wind_speed = wind_speed;
     }
 
-    @Override
-    public String toString() {
-        return date+"-"+text_day+"-"+high+"/"+low;
+    public String toString(Context context,String unitType) {
+        long mhigh = 0;
+        long mlow = 0;
+        if (unitType.equals(context.getString(R.string.pref_units_imperial))) {
+            mhigh = Math.round((high * 1.8) + 32);
+            mlow = Math.round((low * 1.8) + 32);
+        } else if (unitType.equals(context.getString(R.string.pref_units_metric))) {
+            mhigh=Math.round(high);
+            mlow=Math.round(low);
+        }
+        return date+"-"+text_day+"-"+mhigh+"/"+mlow;
     }
 }
