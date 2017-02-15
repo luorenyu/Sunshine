@@ -17,6 +17,10 @@ import android.widget.TextView;
 public class DetialActivity extends ActionBarActivity {
 
     private String detailTitle;
+    private static final String LOG_TAG = DetailFragment.class.getSimpleName();
+
+    private static final String FORECAST_SHARE_HASHTAG = " #SunshineApp";
+    private String mForecastStr;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -48,7 +52,7 @@ public class DetialActivity extends ActionBarActivity {
     }
     public static class DetailFragment extends Fragment{
         public DetailFragment() {
-
+            setHasOptionsMenu(true);
         }
 
         @Override

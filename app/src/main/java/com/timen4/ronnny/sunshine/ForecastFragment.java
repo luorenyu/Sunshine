@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.timen4.ronnny.sunshine.bean.WeatherData;
 
@@ -60,7 +61,7 @@ public class ForecastFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        updateDate();
+        updateWeather();
     }
 
     @Override
@@ -72,7 +73,7 @@ public class ForecastFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemId = item.getItemId();
         if(itemId==R.id.action_refresh){
-            updateDate();
+            updateWeather();
             return true;
         }else if (itemId==R.id.action_setting){
             Intent intent=new Intent(getActivity(),SettingActivity.class);
@@ -106,11 +107,12 @@ public class ForecastFragment extends Fragment {
         if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
             startActivity(intent);
         } else {
+            Toast.makeText(getContext(),"no mapApp on your phone",Toast.LENGTH_SHORT);
             Log.d("location", "Couldn't call " + location + ", no receiving apps installed!");
         }
     }
 
-    private void updateDate() {
+    private void updateWeather() {
         FetchWeatherTask weatherTask=new FetchWeatherTask();
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String location= sharedPrefs.getString(getString(R.string.pref_location_key),getString(R.string.pref_location_default));
