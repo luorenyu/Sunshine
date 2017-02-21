@@ -18,7 +18,7 @@ import android.widget.TextView;
 /**
  * Created by luore on 2016/6/28.
  */
-public class DetialActivity extends ActionBarActivity {
+public class DetailActivity extends ActionBarActivity {
 
     private String detailTitle;
 
@@ -96,8 +96,11 @@ public class DetialActivity extends ActionBarActivity {
 
         private Intent createShareForecastIntent() {
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            //FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET表示，我们在返回时返回实际操作的app而不是返回到分享app
             shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+            //设置我们要分享的类型
             shareIntent.setType("text/plain");
+            //分享的实际内容 ‘天气字符串+#SunshineApp’
             shareIntent.putExtra(Intent.EXTRA_TEXT,
                     mForecastStr + FORECAST_SHARE_HASHTAG);
             return shareIntent;
